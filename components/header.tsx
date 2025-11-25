@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,8 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronsUpDown, Plus, Check, Trash2 } from "lucide-react";
-import type { Group } from "@/lib/schema";
-import { authClient } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-client";
 import {
   Dialog,
   DialogContent,
@@ -20,10 +20,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { type GroupItem } from "@/lib/schema";
 
 interface HeaderProps {
-  groups: Group[];
-  selectedGroup: Group;
+  groups: GroupItem[];
+  selectedGroup: GroupItem;
   onSelectGroup: (id: string) => void;
   onCreateGroup: (name: string) => void;
   onDeleteGroup?: (id: string) => void;
@@ -40,12 +41,18 @@ export function Header({
   bookmarkCounts,
   userName,
 }: HeaderProps) {
+  const router = useRouter();
   const [newGroupName, setNewGroupName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [holdingGroupId, setHoldingGroupId] = useState<string | null>(null);
   const [holdProgress, setHoldProgress] = useState(0);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
   const holdStartRef = useRef<number>(0);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
 
   const handleCreateGroup = () => {
     if (newGroupName.trim()) {
@@ -211,10 +218,7 @@ export function Header({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="rounded-2xl">
           <DropdownMenuItem className="rounded-lg">Settings</DropdownMenuItem>
-          <DropdownMenuItem
-            className="rounded-lg"
-            onClick={() => authClient.signOut()}
-          >
+          <DropdownMenuItem className="rounded-lg" onClick={handleSignOut}>
             Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>

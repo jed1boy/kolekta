@@ -22,11 +22,11 @@ import {
   Check,
 } from "lucide-react";
 import { cn, parseColor } from "@/lib/utils";
-import type { Bookmark, Group } from "@/lib/schema";
+import { type BookmarkItem, type GroupItem } from "@/lib/schema";
 
 interface BookmarkListProps {
-  bookmarks: Bookmark[];
-  groups: Group[];
+  bookmarks: BookmarkItem[];
+  groups: GroupItem[];
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
   onMove: (id: string, groupId: string) => void;
@@ -63,24 +63,25 @@ export function BookmarkList({
     null
   );
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === "string" ? new Date(date) : date;
     const now = new Date();
-    const isCurrentYear = date.getFullYear() === now.getFullYear();
+    const isCurrentYear = d.getFullYear() === now.getFullYear();
 
     if (isCurrentYear) {
-      return date.toLocaleDateString("en-US", {
+      return d.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       });
     }
-    return date.toLocaleDateString("en-US", {
+    return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   };
 
-  const handleClick = (bookmark: Bookmark) => {
+  const handleClick = (bookmark: BookmarkItem) => {
     if (renamingId) return;
     onSelect(-1);
 
@@ -94,14 +95,14 @@ export function BookmarkList({
     }
   };
 
-  const handleCopy = (bookmark: Bookmark) => {
+  const handleCopy = (bookmark: BookmarkItem) => {
     const textToCopy = bookmark.url || bookmark.color || bookmark.title;
     navigator.clipboard.writeText(textToCopy);
     setCopiedId(bookmark.id);
     setTimeout(() => setCopiedId(null), 1000);
   };
 
-  const handleStartRename = (bookmark: Bookmark) => {
+  const handleStartRename = (bookmark: BookmarkItem) => {
     onStartRename(bookmark.id);
     setEditValue(bookmark.title);
   };
@@ -271,7 +272,7 @@ function BookmarkIcon({
   bookmark,
   isCopied,
 }: {
-  bookmark: Bookmark;
+  bookmark: BookmarkItem;
   isCopied?: boolean;
 }) {
   if (isCopied) {

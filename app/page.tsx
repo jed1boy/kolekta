@@ -1,152 +1,107 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/header";
 import { BookmarkInput } from "@/components/bookmark-input";
 import { BookmarkList } from "@/components/bookmark-list";
-import type { Bookmark, Group } from "@/lib/schema";
 import { parseColor, isUrl, normalizeUrl } from "@/lib/utils";
-
-const initialGroups: Group[] = [
-  {
-    id: "1",
-    name: "Bookmarks",
-    color: "#74B06F",
-    userId: "demo",
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-  },
-  {
-    id: "2",
-    name: "Work",
-    color: "#4A90D9",
-    userId: "demo",
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-  },
-  {
-    id: "3",
-    name: "Personal",
-    color: "#E6A23C",
-    userId: "demo",
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-  },
-];
-
-const initialBookmarks: Bookmark[] = [
-  {
-    id: "1",
-    title: "@ on X",
-    url: "https://x.com",
-    favicon: "https://abs.twimg.com/favicons/twitter.3.ico",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "link",
-  },
-  {
-    id: "2",
-    title: "Google Gemini",
-    url: "https://gemini.google.com",
-    favicon:
-      "https://www.gstatic.com/lamda/images/gemini_favicon_f069958c85030456e93de685481c559f160ea06b.png",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "link",
-  },
-  {
-    id: "3",
-    title: "Claude",
-    url: "https://claude.ai",
-    favicon: "https://claude.ai/favicon.ico",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "link",
-  },
-  {
-    id: "4",
-    title: "Documenso - The Open Source DocuSign Al...",
-    url: "https://documenso.com",
-    favicon: "https://documenso.com/favicon.ico",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "link",
-  },
-  {
-    id: "5",
-    title: "Google",
-    url: "https://google.com",
-    favicon: "https://www.google.com/favicon.ico",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "link",
-  },
-  {
-    id: "6",
-    title: "sample",
-    url: "",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "text",
-  },
-  {
-    id: "7",
-    title: "@shaurya50211 on X",
-    url: "https://x.com",
-    favicon: "https://abs.twimg.com/favicons/twitter.3.ico",
-    createdAt: new Date("2024-06-11"),
-    updatedAt: new Date("2024-06-11"),
-    groupId: "1",
-    userId: "demo",
-    type: "link",
-  },
-  {
-    id: "8",
-    title: "christabel, maybe. chances are 90%",
-    url: "",
-    createdAt: new Date("2024-02-22"),
-    updatedAt: new Date("2024-02-22"),
-    groupId: "1",
-    userId: "demo",
-    type: "text",
-  },
-  {
-    id: "9",
-    title: "#FF5733",
-    url: "",
-    createdAt: new Date("2024-11-20"),
-    updatedAt: new Date("2024-11-20"),
-    groupId: "1",
-    userId: "demo",
-    type: "color",
-    color: "#FF5733",
-  },
-];
+import { useSession } from "@/lib/auth-client";
+import { client } from "@/lib/orpc";
+import type { BookmarkType } from "@/lib/schema";
 
 export default function Home() {
-  const [groups, setGroups] = useState<Group[]>(initialGroups);
-  const [selectedGroupId, setSelectedGroupId] = useState("1");
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: session, isPending: sessionPending } = useSession();
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!sessionPending && !session) {
+      router.push("/login");
+    }
+  }, [session, sessionPending, router]);
+
+  const groupsQuery = useQuery({
+    queryKey: ["groups"],
+    queryFn: () => client.group.list(),
+    enabled: !!session,
+  });
+
+  const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
+
+  const currentGroupId = selectedGroupId ?? groups[0]?.id ?? null;
+
+  const bookmarksQuery = useQuery({
+    queryKey: ["bookmarks", currentGroupId],
+    queryFn: () =>
+      client.bookmark.list({ groupId: currentGroupId ?? undefined }),
+    enabled: !!session && !!currentGroupId,
+  });
+
+  const bookmarks = useMemo(
+    () => bookmarksQuery.data ?? [],
+    [bookmarksQuery.data]
+  );
+
+  const createBookmarkMutation = useMutation({
+    mutationFn: (data: {
+      title: string;
+      url?: string;
+      type: BookmarkType;
+      color?: string;
+      groupId: string;
+    }) => client.bookmark.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+    },
+  });
+
+  const updateBookmarkMutation = useMutation({
+    mutationFn: (data: {
+      id: string;
+      title?: string;
+      url?: string;
+      type?: BookmarkType;
+      color?: string;
+      groupId?: string;
+    }) => client.bookmark.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+    },
+  });
+
+  const deleteBookmarkMutation = useMutation({
+    mutationFn: (data: { id: string }) => client.bookmark.delete(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+    },
+  });
+
+  const createGroupMutation = useMutation({
+    mutationFn: (data: { name: string; color: string }) =>
+      client.group.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
+  });
+
+  const deleteGroupMutation = useMutation({
+    mutationFn: (data: { id: string }) => client.group.delete(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+    },
+  });
+
   const selectedGroup =
-    groups.find((g) => g.id === selectedGroupId) || groups[0];
+    groups.find((g) => g.id === currentGroupId) || groups[0];
 
   const handleStartRename = (id: string) => {
     setRenamingId(id);
@@ -156,18 +111,22 @@ export default function Home() {
     setRenamingId(null);
   };
 
-  const handleDeleteBookmark = useCallback((id: string) => {
-    setBookmarks((prev) => prev.filter((b) => b.id !== id));
-  }, []);
+  const handleDeleteBookmark = useCallback(
+    (id: string) => {
+      deleteBookmarkMutation.mutate({ id });
+    },
+    [deleteBookmarkMutation]
+  );
 
-  const filteredBookmarks = bookmarks.filter((b) => {
-    if (b.groupId !== selectedGroupId) return false;
-    if (!searchQuery) return true;
-    return (
-      b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.url?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const filteredBookmarks = useMemo(() => {
+    return bookmarks.filter((b) => {
+      if (!searchQuery) return true;
+      return (
+        b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.url?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
+  }, [bookmarks, searchQuery]);
 
   const bookmarkCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -194,7 +153,6 @@ export default function Home() {
         return;
       }
 
-      // Determine active bookmark (hover takes priority over arrow selection)
       const activeIndex = hoveredIndex >= 0 ? hoveredIndex : selectedIndex;
       if (activeIndex < 0 || activeIndex >= filteredBookmarks.length) return;
       const activeBookmark = filteredBookmarks[activeIndex];
@@ -229,7 +187,13 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredBookmarks, selectedIndex, hoveredIndex, renamingId]);
+  }, [
+    filteredBookmarks,
+    selectedIndex,
+    hoveredIndex,
+    renamingId,
+    handleDeleteBookmark,
+  ]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -243,118 +207,125 @@ export default function Home() {
 
   const handleAddBookmark = useCallback(
     (value: string) => {
+      if (!currentGroupId) return;
+
       const lines = value
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
 
-      const newBookmarks: Bookmark[] = lines.map((line) => {
-        const now = new Date();
+      lines.forEach((line) => {
         const colorResult = parseColor(line);
         if (colorResult.isColor) {
-          return {
-            id: Date.now().toString() + Math.random(),
+          createBookmarkMutation.mutate({
             title: colorResult.original || line,
             url: "",
-            createdAt: now,
-            updatedAt: now,
-            groupId: selectedGroupId,
-            userId: "demo",
-            type: "color" as const,
+            type: "color",
             color: colorResult.hex,
-          };
+            groupId: currentGroupId,
+          });
+          return;
         }
 
         if (isUrl(line)) {
           const url = normalizeUrl(line);
-          return {
-            id: Date.now().toString() + Math.random(),
+          createBookmarkMutation.mutate({
             title: new URL(url).hostname.replace("www.", ""),
             url,
-            createdAt: now,
-            updatedAt: now,
-            groupId: selectedGroupId,
-            userId: "demo",
-            type: "link" as const,
-          };
+            type: "link",
+            groupId: currentGroupId,
+          });
+          return;
         }
 
-        return {
-          id: Date.now().toString() + Math.random(),
+        createBookmarkMutation.mutate({
           title: line,
           url: "",
-          createdAt: now,
-          updatedAt: now,
-          groupId: selectedGroupId,
-          userId: "demo",
-          type: "text" as const,
-        };
+          type: "text",
+          groupId: currentGroupId,
+        });
       });
 
-      setBookmarks((prev) => [...newBookmarks, ...prev]);
       setSearchQuery("");
       setSelectedIndex(-1);
     },
-    [selectedGroupId]
+    [currentGroupId, createBookmarkMutation]
   );
 
-  const handleCreateGroup = useCallback((name: string) => {
-    const colors = ["#74B06F", "#4A90D9", "#E6A23C", "#9B59B6", "#E74C3C"];
-    const now = new Date();
-    const newGroup: Group = {
-      id: Date.now().toString(),
-      name,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      userId: "demo",
-      createdAt: now,
-      updatedAt: now,
-    };
-    setGroups((prev) => [...prev, newGroup]);
-    setSelectedGroupId(newGroup.id);
-    setSelectedIndex(-1);
-  }, []);
+  const handleCreateGroup = useCallback(
+    (name: string) => {
+      const colors = ["#74B06F", "#4A90D9", "#E6A23C", "#9B59B6", "#E74C3C"];
+      createGroupMutation.mutate(
+        {
+          name,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        },
+        {
+          onSuccess: (newGroup) => {
+            setSelectedGroupId(newGroup.id);
+            setSelectedIndex(-1);
+          },
+        }
+      );
+    },
+    [createGroupMutation]
+  );
 
   const handleDeleteGroup = useCallback(
     (id: string) => {
-      setGroups((prev) => prev.filter((g) => g.id !== id));
-      setBookmarks((prev) =>
-        prev.map((b) =>
-          b.groupId === id
-            ? {
-                ...b,
-                groupId:
-                  groups[0].id === id
-                    ? groups[1]?.id || groups[0].id
-                    : groups[0].id,
-              }
-            : b
-        )
+      deleteGroupMutation.mutate(
+        { id },
+        {
+          onSuccess: () => {
+            if (currentGroupId === id) {
+              const remainingGroups = groups.filter((g) => g.id !== id);
+              setSelectedGroupId(remainingGroups[0]?.id || null);
+              setSelectedIndex(-1);
+            }
+          },
+        }
       );
-      // Select first group if current is deleted
-      if (selectedGroupId === id) {
-        const remainingGroups = groups.filter((g) => g.id !== id);
-        setSelectedGroupId(remainingGroups[0]?.id || "1");
-        setSelectedIndex(-1);
-      }
     },
-    [groups, selectedGroupId]
+    [deleteGroupMutation, groups, currentGroupId]
   );
 
-  const handleRenameBookmark = useCallback((id: string, newTitle: string) => {
-    setBookmarks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, title: newTitle } : b))
-    );
-  }, []);
+  const handleRenameBookmark = useCallback(
+    (id: string, newTitle: string) => {
+      updateBookmarkMutation.mutate({ id, title: newTitle });
+    },
+    [updateBookmarkMutation]
+  );
 
-  const handleMoveBookmark = useCallback((id: string, groupId: string) => {
-    setBookmarks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, groupId } : b))
-    );
-  }, []);
+  const handleMoveBookmark = useCallback(
+    (id: string, groupId: string) => {
+      updateBookmarkMutation.mutate({ id, groupId });
+    },
+    [updateBookmarkMutation]
+  );
 
   const handleRefetchBookmark = useCallback((id: string) => {
     console.log("Refetching bookmark:", id);
   }, []);
+
+  if (sessionPending) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  if (!selectedGroup) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading groups...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -365,7 +336,7 @@ export default function Home() {
         onCreateGroup={handleCreateGroup}
         onDeleteGroup={handleDeleteGroup}
         bookmarkCounts={bookmarkCounts}
-        userName="duncan"
+        userName={session.user.name}
       />
       <main className="mx-auto max-w-3xl px-5 py-20">
         <BookmarkInput
@@ -381,7 +352,7 @@ export default function Home() {
           onRename={handleRenameBookmark}
           onMove={handleMoveBookmark}
           onRefetch={handleRefetchBookmark}
-          currentGroupId={selectedGroupId}
+          currentGroupId={currentGroupId || ""}
           selectedIndex={selectedIndex}
           onSelect={setSelectedIndex}
           renamingId={renamingId}

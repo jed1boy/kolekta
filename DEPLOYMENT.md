@@ -43,7 +43,7 @@ CLI commands, then apply the generated SQL to Turso.
 
 1) Configure Prisma CLI to use `LOCAL_DATABASE_URL` (already set in
    `prisma.config.ts`).
-   - Ensure `.env` includes:
+   - Optional in `.env` (defaults to `file:./dev.db` if not set):
      - `LOCAL_DATABASE_URL="file:./dev.db"`
 2) Generate a migration locally:
    - `npx prisma migrate dev --name init`

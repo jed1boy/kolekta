@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "bmrks",
+  title: "minimal",
   description: "Bookmark manager",
 };
 

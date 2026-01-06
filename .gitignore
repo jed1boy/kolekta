@@ -45,3 +45,5 @@ prisma/generated
 
 # sqlite
 *.db
+
+.vscode

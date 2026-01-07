@@ -605,7 +605,7 @@ export function Landing() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-[600px]">
+        {/* <div className="mx-auto max-w-[600px]">
           <div className="relative mx-auto mb-2 flex max-w-[450px] items-center justify-center">
             <h2 className="z-10 bg-white px-5 text-lg font-medium text-zinc-900">
               Pricing
@@ -1049,7 +1049,7 @@ export function Landing() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <footer className="mb-10 mt-10 text-center text-sm text-zinc-500 sm:mb-16 sm:mt-16">
           <div className="mb-4 flex flex-wrap flex-row items-center justify-center">

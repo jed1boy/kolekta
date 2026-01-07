@@ -3,8 +3,8 @@ import Link from "next/link";
 export function Landing() {
   return (
     <div className="flex grow flex-col bg-white text-zinc-900">
-      <div className="mx-auto max-w-3xl p-6">
-        <header className="mx-auto mb-12 mt-24 flex max-w-[400px] flex-col items-center justify-center text-center">
+      <div className="mx-auto max-w-3xl p-4 sm:p-6">
+        <header className="mx-auto mb-8 mt-12 flex max-w-[400px] flex-col items-center justify-center text-center sm:mb-12 sm:mt-24">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="48"
@@ -29,13 +29,13 @@ export function Landing() {
           <div className="mt-5 flex gap-2 items-center">
             <Link
               href="/login"
-              className="rounded-full bg-zinc-900 px-8 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="rounded-full bg-zinc-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 sm:px-8"
             >
               Login
             </Link>
             <Link
               href="/signup"
-              className="rounded-full bg-zinc-900 px-8 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="rounded-full bg-zinc-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 sm:px-8"
             >
               Sign Up
             </Link>
@@ -269,7 +269,7 @@ export function Landing() {
             </p>
           </div>
         </div>
-        <section className="my-20 max-w-[450px] mx-auto">
+        <section className="mx-auto my-12 max-w-[450px] sm:my-20">
           <div className="space-y-7">
             <div className="flex items-start">
               <svg
@@ -1051,7 +1051,7 @@ export function Landing() {
           </div>
         </div>
 
-        <footer className="mb-16 mt-16 text-center text-sm text-zinc-500">
+        <footer className="mb-10 mt-10 text-center text-sm text-zinc-500 sm:mb-16 sm:mt-16">
           <div className="mb-4 flex flex-wrap flex-row items-center justify-center">
             <a
               href="/terms"

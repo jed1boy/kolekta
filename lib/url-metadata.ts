@@ -18,6 +18,7 @@ function isAllowedUrl(url: string): boolean {
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
       hostname === "::1" ||
+      hostname === "::" ||
       hostname === "0.0.0.0"
     ) {
       return false;
@@ -25,7 +26,9 @@ function isAllowedUrl(url: string): boolean {
 
     const ipMatch = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
     if (ipMatch) {
-      const [, a, b] = ipMatch.map(Number);
+      const a = Number(ipMatch[1]);
+      const b = Number(ipMatch[2]);
+
       if (a === 10) return false;
       if (a === 172 && b >= 16 && b <= 31) return false;
       if (a === 192 && b === 168) return false;
@@ -52,36 +55,64 @@ async function fetchUrlMetadata(url: string): Promise<FetchResult> {
     };
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (compatible; minimal/1.0)",
+      Accept: "text/html,application/xhtml+xml",
+    };
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; minimal/1.0)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
+    let currentUrl = url;
+    const maxRedirects = 5;
 
-    clearTimeout(timeoutId);
+    for (let i = 0; i <= maxRedirects; i++) {
+      const response = await fetch(currentUrl, {
+        signal: controller.signal,
+        headers,
+        redirect: "manual",
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        const nextUrl = location ? resolveUrl(location, currentUrl) : null;
+
+        if (!nextUrl || !isAllowedUrl(nextUrl)) {
+          return {
+            metadata: { title: null, favicon: null, fetchedAt: Date.now() },
+            success: false,
+          };
+        }
+
+        currentUrl = nextUrl;
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const metadata = parseHtmlMetadata(html, currentUrl);
+
+      return {
+        metadata: { ...metadata, fetchedAt: Date.now() },
+        success: true,
+      };
     }
 
-    const html = await response.text();
-    const metadata = parseHtmlMetadata(html, url);
-
     return {
-      metadata: { ...metadata, fetchedAt: Date.now() },
-      success: true,
+      metadata: { title: null, favicon: null, fetchedAt: Date.now() },
+      success: false,
     };
   } catch {
     return {
       metadata: { title: null, favicon: null, fetchedAt: Date.now() },
       success: false,
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

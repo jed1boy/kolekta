@@ -35,9 +35,25 @@ let currentPage = {
 
 // API Client
 const api = {
+  async fetchWithTimeout(url, options = {}, timeout = 10000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(id);
+      return response;
+    } catch (error) {
+      clearTimeout(id);
+      throw error;
+    }
+  },
+
   async validateToken(token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/extension/validate`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/api/extension/validate`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -61,7 +77,7 @@ const api = {
 
   async getGroups(token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/extension/groups`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/api/extension/groups`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -82,7 +98,7 @@ const api = {
 
   async saveBookmark(token, bookmarkData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/extension/bookmark`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/api/extension/bookmark`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

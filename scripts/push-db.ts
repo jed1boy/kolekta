@@ -39,8 +39,8 @@ async function main() {
         // but for standard Prisma schema pushes (CREATE TABLE) it works well.
         const statements = sql
             .split(';')
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0);
 
         console.log(`Found ${statements.length} statements to execute.`);
 

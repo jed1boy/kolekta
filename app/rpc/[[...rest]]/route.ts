@@ -5,7 +5,10 @@ import { router } from "@/server";
 const handler = new RPCHandler(router, {
   interceptors: [
     onError((error: unknown) => {
-      console.error(error);
+      console.error("[RPC Error]", error);
+      if (error instanceof Error) {
+        console.error("[RPC Error Stack]", error.stack);
+      }
     }),
   ],
 });

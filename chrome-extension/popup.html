@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kolekta</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">kolekta</div>
+      <button id="settings-btn" class="icon-btn" title="Settings" style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading-view" class="view">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Connecting...</p>
+    </div>
+
+    <!-- Config View -->
+    <div id="config-view" class="view" style="display: none;">
+      <div class="view-content">
+        <p class="description">Paste your API token to connect your account.</p>
+        
+        <div class="form-group">
+          <label for="api-token">API Token</label>
+          <input type="password" id="api-token" placeholder="kolekta_..." autocomplete="off">
+          <span class="hint">Go to Settings → API Tokens to generate one</span>
+        </div>
+
+        <div id="config-error" class="error-message" style="display: none;"></div>
+
+        <button id="connect-btn" class="btn btn-primary">
+          Connect
+        </button>
+      </div>
+    </div>
+
+    <!-- Save View -->
+    <div id="save-view" class="view" style="display: none;">
+      <div class="view-content">
+        <!-- User Info -->
+        <div id="user-info" class="user-info">
+          <span class="user-name"></span>
+          <span class="user-email"></span>
+        </div>
+
+        <!-- Page Info -->
+        <div class="page-info">
+          <img id="page-favicon" class="page-favicon" src="" alt="">
+          <div class="page-details">
+            <div id="page-title" class="page-title"></div>
+            <div id="page-url" class="page-url"></div>
+          </div>
+        </div>
+
+        <!-- Group Selector -->
+        <div class="form-group">
+          <label for="group-select">Group</label>
+          <select id="group-select">
+            <option value="">Default Group</option>
+          </select>
+        </div>
+
+        <div id="save-error" class="error-message" style="display: none;"></div>
+        <div id="save-success" class="success-message" style="display: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>Bookmark saved!</span>
+        </div>
+
+        <button id="save-btn" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+          </svg>
+          Save Bookmark
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

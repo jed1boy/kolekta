@@ -206,17 +206,55 @@ export function BookmarkList({
                   )}
                 </div>
                 <div className="relative w-[90px] h-5 flex items-center justify-end">
-                  {!((selectedIndex === index || hoveredIndex === index) && !renamingId) && (
+                  {!(
+                    (selectedIndex === index || hoveredIndex === index) &&
+                    !renamingId
+                  ) && (
                     <span className="text-[13px] text-muted-foreground whitespace-nowrap">
                       {formatDate(bookmark.createdAt)}
                     </span>
                   )}
-                  {(selectedIndex === index || hoveredIndex === index) && !renamingId && (
-                    <KbdGroup>
-                      <Kbd>⌘</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  )}
+                  {(selectedIndex === index || hoveredIndex === index) &&
+                    !renamingId && (
+                      <div className="flex items-center gap-1">
+                        <div
+                          className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartRename(bookmark);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleStartRename(bookmark);
+                            }
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <div
+                          className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(bookmark.id);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onDelete(bookmark.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                      </div>
+                    )}
                 </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-48">

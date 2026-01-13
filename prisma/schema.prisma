@@ -20,6 +20,7 @@ model user {
   accounts  account[]
   bookmarks bookmark[]
   groups    group[]
+  apiTokens apiToken[]
 }
 
 model session {
@@ -95,4 +96,20 @@ model bookmark {
 
   @@index([userId])
   @@index([groupId])
+}
+
+model apiToken {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  prefix     String
+  name       String?
+  userId     String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }

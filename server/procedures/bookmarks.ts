@@ -150,3 +150,26 @@ export const refetchBookmark = authed
 
     return bookmark;
   });
+
+export const exportBookmarks = authed.handler(async ({ context }) => {
+  const bookmarks = await db.bookmark.findMany({
+    where: { userId: context.user.id },
+    include: {
+      group: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return bookmarks.map((b) => ({
+    title: b.title,
+    url: b.url,
+    group: b.group.name,
+    createdAt: b.createdAt,
+    type: b.type,
+    color: b.color,
+  }));
+});

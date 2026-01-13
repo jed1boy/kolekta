@@ -123,6 +123,32 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+// API Token schemas
+export const generateTokenSchema = z.object({
+  name: z.string().optional(),
+});
+
+export const apiTokenSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  prefix: z.string(),
+  lastUsedAt: z.union([z.date(), z.string()]).nullable(),
+  createdAt: z.union([z.date(), z.string()]),
+});
+
+export const revokeTokenSchema = z.object({
+  id: z.string(),
+});
+
+// Extension schemas
+export const extensionSaveBookmarkSchema = z.object({
+  url: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  favicon: z.string().optional(),
+  groupId: z.string().optional(),
+});
+
 export type User = z.infer<typeof userSchema>;
 export type SessionData = z.infer<typeof sessionDataSchema>;
 export type Session = z.infer<typeof sessionSchema>;
@@ -137,3 +163,7 @@ export type CreateGroup = z.infer<typeof createGroupSchema>;
 export type UpdateGroup = z.infer<typeof updateGroupSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
+export type GenerateToken = z.infer<typeof generateTokenSchema>;
+export type ApiToken = z.infer<typeof apiTokenSchema>;
+export type RevokeToken = z.infer<typeof revokeTokenSchema>;
+export type ExtensionSaveBookmark = z.infer<typeof extensionSaveBookmarkSchema>;

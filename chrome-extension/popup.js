@@ -1,5 +1,5 @@
 // Configuration - Change this to your production URL
-const API_BASE_URL = 'https://kolekta.vercel.app';
+const API_BASE_URL = 'https://dokolekta.vercel.app';
 
 // Storage keys
 const STORAGE_KEYS = {

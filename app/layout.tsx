@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "minimal",
-  description: "Bookmark manager",
+  title: "kolekta",
+  description: "Collect, organize, and discover your bookmarks",
 };
 
 export default function RootLayout({

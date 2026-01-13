@@ -13,7 +13,7 @@ export function Landing() {
   }, []);
 
   return (
-    <div className="flex grow flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300">
+    <div className="flex min-h-screen flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
         <header className="mx-auto mb-16 mt-20 flex max-w-md flex-col items-center justify-center text-center sm:mb-20 sm:mt-32">
           <button

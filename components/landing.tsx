@@ -1,26 +1,42 @@
+"use client";
+
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function Landing() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <div className="flex grow flex-col bg-white text-zinc-900">
+    <div className="flex grow flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
         <header className="mx-auto mb-16 mt-20 flex max-w-md flex-col items-center justify-center text-center sm:mb-20 sm:mt-32">
-          <h1 className="mb-3 text-4xl font-medium tracking-tight text-zinc-900 sm:text-5xl">
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="mb-3 text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl hover:opacity-80 transition-opacity"
+            title="Toggle theme"
+            type="button"
+          >
             kolekta
-          </h1>
-          <p className="text-lg text-zinc-500">
+          </button>
+          <p className="text-lg text-zinc-500 dark:text-zinc-400">
             collect. organize. discover.
           </p>
           <div className="mt-8 flex gap-3 items-center">
             <Link
               href="/login"
-              className="rounded-full border border-zinc-200 bg-white px-6 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-6 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-200 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              className="rounded-full bg-zinc-900 dark:bg-zinc-50 px-6 py-2.5 text-sm font-medium text-white dark:text-zinc-900 transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
             >
               Get started
             </Link>
@@ -60,52 +76,7 @@ export function Landing() {
           />
         </div>
 
-        <section className="mx-auto my-20 max-w-lg sm:my-28">
-          <div className="space-y-8">
-            <FeatureRow
-              icon={<BookmarkIcon className="w-5 h-5" />}
-              title="Save in seconds"
-              description="Paste any URL, hit enter. Done. No friction, no extra steps."
-            />
-            <FeatureRow
-              icon={<MetadataIcon className="w-5 h-5" />}
-              title="Auto-fetch metadata"
-              description="Titles, descriptions, and favicons are pulled automatically. Your links look great without any effort."
-            />
-            <FeatureRow
-              icon={<GroupIcon className="w-5 h-5" />}
-              title="Organize with collections"
-              description="Create groups to categorize your bookmarks. Keep work, personal, and inspiration separate."
-            />
-            <FeatureRow
-              icon={<SearchIcon className="w-5 h-5" />}
-              title="Instant search"
-              description="Find any bookmark by title, URL, or collection. Results appear as you type."
-            />
-            <FeatureRow
-              icon={<KeyboardIcon className="w-5 h-5" />}
-              title="Keyboard shortcuts"
-              description="Navigate, search, and manage everything without touching your mouse. Built for speed."
-            />
-            <FeatureRow
-              icon={<LockIcon className="w-5 h-5" />}
-              title="Private by default"
-              description="Your bookmarks are yours alone. No tracking, no ads, no data selling."
-            />
-            <FeatureRow
-              icon={<LayoutIcon className="w-5 h-5" />}
-              title="Clean interface"
-              description="No clutter, no distractions. Just your bookmarks in a focused layout."
-            />
-            <FeatureRow
-              icon={<GlobeIcon className="w-5 h-5" />}
-              title="Access anywhere"
-              description="Web-only means no apps to install. Works on any device with a browser."
-            />
-          </div>
-        </section>
-
-        <footer className="mb-12 mt-8 text-center text-sm text-zinc-400 sm:mb-20">
+        <footer className="mb-12 mt-20 text-center text-sm text-zinc-400 sm:mb-20">
           <div className="mb-4 flex flex-wrap flex-row items-center justify-center gap-1">
             <a
               href="/terms"
@@ -140,30 +111,10 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="group rounded-xl border border-zinc-100 bg-white p-5 transition-all hover:border-zinc-200 hover:shadow-sm">
-      <div className="mb-3 text-zinc-600">{icon}</div>
-      <h2 className="mb-1 text-sm font-medium text-zinc-900">{title}</h2>
-      <p className="text-sm text-zinc-500">{description}</p>
-    </div>
-  );
-}
-
-function FeatureRow({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className="mt-0.5 text-zinc-400 shrink-0">{icon}</div>
-      <div>
-        <h3 className="font-medium text-zinc-900 mb-1">{title}</h3>
-        <p className="text-zinc-500 text-sm leading-relaxed">{description}</p>
-      </div>
+    <div className="group rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-5 transition-all hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-sm">
+      <div className="mb-3 text-zinc-600 dark:text-zinc-400">{icon}</div>
+      <h2 className="mb-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</h2>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
     </div>
   );
 }

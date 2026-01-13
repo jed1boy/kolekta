@@ -1,5 +1,5 @@
 // Configuration - Change this to your production URL
-const API_BASE_URL = 'https://dokolekta.vercel.app';
+const API_BASE_URL = 'https://dokolekta.vercel.app/';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -189,7 +189,7 @@ function updateUserInfo(user) {
 function updatePageInfo(page) {
   elements.pageTitle.textContent = page.title || 'Untitled';
   elements.pageUrl.textContent = page.url || '';
-  
+
   if (page.favicon) {
     elements.pageFavicon.src = page.favicon;
     elements.pageFavicon.style.display = 'block';
@@ -235,7 +235,7 @@ async function initialize() {
 
     // Check for stored token
     const stored = await storage.get([STORAGE_KEYS.API_TOKEN, STORAGE_KEYS.USER]);
-    
+
     if (!stored[STORAGE_KEYS.API_TOKEN]) {
       // No token, show config
       showView('config');
@@ -273,7 +273,7 @@ async function initialize() {
 // Handle connect button click
 async function handleConnect() {
   hideConfigError();
-  
+
   const apiToken = elements.apiTokenInput.value.trim();
 
   if (!apiToken) {
@@ -327,7 +327,7 @@ async function handleSave() {
   hideSaveMessages();
 
   const stored = await storage.get([STORAGE_KEYS.API_TOKEN]);
-  
+
   if (!stored[STORAGE_KEYS.API_TOKEN]) {
     showView('config');
     return;

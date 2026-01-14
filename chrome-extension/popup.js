@@ -20,7 +20,11 @@ const elements = {
   pageFavicon: document.getElementById('page-favicon'),
   pageTitle: document.getElementById('page-title'),
   pageUrl: document.getElementById('page-url'),
-  groupSelect: document.getElementById('group-select'),
+  // Custom dropdown elements
+  groupDropdown: document.getElementById('group-dropdown'),
+  dropdownTrigger: document.getElementById('dropdown-trigger'),
+  dropdownValue: document.getElementById('dropdown-value'),
+  dropdownMenu: document.getElementById('dropdown-menu'),
   saveError: document.getElementById('save-error'),
   saveSuccess: document.getElementById('save-success'),
   saveBtn: document.getElementById('save-btn')
@@ -33,9 +37,12 @@ let currentPage = {
   favicon: ''
 };
 
+// Selected group ID for dropdown
+let selectedGroupId = '';
+
 // API Client
 const api = {
-  async fetchWithTimeout(url, options = {}, timeout = 10000) {
+  async fetchWithTimeout(url, options = {}, timeout = 5000) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
@@ -203,7 +210,7 @@ function updateUserInfo(user) {
 
 // Update UI with page info
 function updatePageInfo(page) {
-  elements.pageTitle.textContent = page.title || 'Untitled';
+  elements.pageTitle.value = page.title || 'Untitled';
   elements.pageUrl.textContent = page.url || '';
 
   if (page.favicon) {
@@ -214,20 +221,64 @@ function updatePageInfo(page) {
   }
 }
 
-// Populate group selector
+// Populate group dropdown
 function populateGroups(groups) {
-  // Clear existing options except the first one
-  while (elements.groupSelect.options.length > 1) {
-    elements.groupSelect.remove(1);
-  }
+  // Clear existing items except the default
+  elements.dropdownMenu.innerHTML = '';
 
+  // Add default option
+  const defaultItem = createDropdownItem('', 'Default Group', true);
+  elements.dropdownMenu.appendChild(defaultItem);
+
+  // Add group options
   groups.forEach(group => {
-    const option = document.createElement('option');
-    option.value = group.id;
-    option.textContent = group.name;
-    option.style.paddingLeft = '24px';
-    elements.groupSelect.appendChild(option);
+    const item = createDropdownItem(group.id, group.name, false);
+    elements.dropdownMenu.appendChild(item);
   });
+
+  // Reset selection
+  selectedGroupId = '';
+  elements.dropdownValue.textContent = 'Default Group';
+}
+
+// Create a dropdown item
+function createDropdownItem(value, name, isSelected) {
+  const item = document.createElement('div');
+  item.className = 'dropdown-item' + (isSelected ? ' selected' : '');
+  item.dataset.value = value;
+  item.dataset.name = name;
+  item.innerHTML = `
+    <span class="item-name">${name}</span>
+    <svg class="item-check" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  `;
+
+  item.addEventListener('click', () => selectDropdownItem(item));
+  return item;
+}
+
+// Select a dropdown item
+function selectDropdownItem(item) {
+  // Update selection state
+  const allItems = elements.dropdownMenu.querySelectorAll('.dropdown-item');
+  allItems.forEach(i => i.classList.remove('selected'));
+  item.classList.add('selected');
+
+  // Update value and close
+  selectedGroupId = item.dataset.value;
+  elements.dropdownValue.textContent = item.dataset.name;
+  closeDropdown();
+}
+
+// Toggle dropdown
+function toggleDropdown() {
+  elements.groupDropdown.classList.toggle('open');
+}
+
+// Close dropdown
+function closeDropdown() {
+  elements.groupDropdown.classList.remove('open');
 }
 
 // Get current tab info
@@ -241,25 +292,33 @@ async function initialize() {
   showView('loading');
 
   try {
-    // Get current tab info
+    // Get current tab info first (this is fast)
     const tab = await getCurrentTab();
     currentPage = {
-      url: tab.url || '',
-      title: tab.title || '',
-      favicon: tab.favIconUrl || ''
+      url: tab?.url || '',
+      title: tab?.title || '',
+      favicon: tab?.favIconUrl || ''
     };
 
     // Check for stored token
     const stored = await storage.get([STORAGE_KEYS.API_TOKEN, STORAGE_KEYS.USER]);
 
     if (!stored[STORAGE_KEYS.API_TOKEN]) {
-      // No token, show config
+      // No token, show config immediately
       showView('config');
       return;
     }
 
-    // Validate stored token
-    const validation = await api.validateToken(stored[STORAGE_KEYS.API_TOKEN]);
+    // Validate stored token with timeout
+    let validation;
+    try {
+      validation = await api.validateToken(stored[STORAGE_KEYS.API_TOKEN]);
+    } catch (error) {
+      // Network error or timeout - show config with error
+      showConfigError('Connection timeout. Check your internet connection.');
+      showView('config');
+      return;
+    }
 
     if (!validation.valid) {
       // Token invalid, show config with error
@@ -271,8 +330,13 @@ async function initialize() {
     // Save user info
     await storage.set({ [STORAGE_KEYS.USER]: validation.user });
 
-    // Fetch groups
-    const groupsResult = await api.getGroups(stored[STORAGE_KEYS.API_TOKEN]);
+    // Fetch groups (don't block on this - show UI even if it fails)
+    let groupsResult = { groups: [], error: null };
+    try {
+      groupsResult = await api.getGroups(stored[STORAGE_KEYS.API_TOKEN]);
+    } catch (error) {
+      console.warn('Failed to fetch groups:', error);
+    }
 
     // Update UI
     updateUserInfo(validation.user);
@@ -281,6 +345,7 @@ async function initialize() {
 
     showView('save');
   } catch (error) {
+    console.error('Initialize error:', error);
     showConfigError('An error occurred. Please try again.');
     showView('config');
   }
@@ -369,11 +434,13 @@ async function handleSave() {
   `;
 
   try {
+    // Use edited title from input field
+    const editedTitle = elements.pageTitle.value.trim() || currentPage.title || 'Untitled';
     const bookmarkData = {
       url: currentPage.url,
-      title: currentPage.title,
+      title: editedTitle,
       favicon: currentPage.favicon,
-      groupId: elements.groupSelect.value || undefined
+      groupId: selectedGroupId || undefined
     };
 
     const result = await api.saveBookmark(stored[STORAGE_KEYS.API_TOKEN], bookmarkData);
@@ -421,6 +488,19 @@ async function handleSettings() {
 elements.connectBtn.addEventListener('click', handleConnect);
 elements.saveBtn.addEventListener('click', handleSave);
 elements.settingsBtn.addEventListener('click', handleSettings);
+
+// Custom dropdown event listeners
+elements.dropdownTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleDropdown();
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!elements.groupDropdown.contains(e.target)) {
+    closeDropdown();
+  }
+});
 
 // Allow Enter key to submit
 elements.apiTokenInput.addEventListener('keypress', (e) => {

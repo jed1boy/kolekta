@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -49,6 +50,11 @@ export function SignupForm({
 
   // Detect password manager autofill via CSS animation
   const formRef = useAutofill(setValue, SIGNUP_FIELDS);
+
+  // Prefetch the dashboard for faster redirect after signup
+  useEffect(() => {
+    router.prefetch("/");
+  }, [router]);
 
   const onSubmit = async (data: SignupFormData) => {
     const { error } = await signUp.email({

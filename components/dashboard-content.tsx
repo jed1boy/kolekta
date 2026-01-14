@@ -42,7 +42,7 @@ export function DashboardContent({
     queryKey: ["groups"],
     queryFn: () => client.group.list(),
     initialData: initialGroups,
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
@@ -56,7 +56,7 @@ export function DashboardContent({
     initialData:
       currentGroupId === initialGroups[0]?.id ? initialBookmarks : undefined,
     enabled: !!currentGroupId,
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const bookmarks = useMemo(
@@ -112,7 +112,9 @@ export function DashboardContent({
     onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["bookmarks", variables.groupId],
+        exact: true,
       });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
     },
   });
 
@@ -125,15 +127,55 @@ export function DashboardContent({
       color?: string;
       groupId?: string;
     }) => client.bookmark.update(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+    onMutate: async (updated) => {
+      await queryClient.cancelQueries({ queryKey: ["bookmarks", currentGroupId] });
+      const previous = queryClient.getQueryData<BookmarkItem[]>(["bookmarks", currentGroupId]);
+      queryClient.setQueryData<BookmarkItem[]>(
+        ["bookmarks", currentGroupId],
+        (old) => old?.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)) ?? []
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["bookmarks", currentGroupId], context.previous);
+      }
+      toast.error("Failed to update bookmark");
+    },
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks", currentGroupId], exact: true });
+      if (variables.groupId && variables.groupId !== currentGroupId) {
+        queryClient.invalidateQueries({ queryKey: ["bookmarks", variables.groupId], exact: true });
+        queryClient.invalidateQueries({ queryKey: ["groups"] });
+      }
     },
   });
 
   const deleteBookmarkMutation = useMutation({
     mutationFn: (data: { id: string }) => client.bookmark.delete(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: ["bookmarks", currentGroupId] });
+      const previous = queryClient.getQueryData<BookmarkItem[]>(["bookmarks", currentGroupId]);
+      queryClient.setQueryData<BookmarkItem[]>(
+        ["bookmarks", currentGroupId],
+        (old) => old?.filter((b) => b.id !== id) ?? []
+      );
+      queryClient.setQueryData<GroupItem[]>(["groups"], (groups) =>
+        groups?.map((g) =>
+          g.id === currentGroupId ? { ...g, bookmarkCount: (g.bookmarkCount ?? 1) - 1 } : g
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["bookmarks", currentGroupId], context.previous);
+      }
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      toast.error("Failed to delete bookmark");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks", currentGroupId], exact: true });
     },
   });
 

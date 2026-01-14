@@ -71,7 +71,9 @@ export const updateBookmark = authed
 export const deleteBookmark = authed
   .input(deleteByIdSchema)
   .handler(async ({ context, input }) => {
-    await db.bookmark.delete({
+    // Use deleteMany to avoid P2025 error if record was already deleted
+    // (can happen with optimistic updates or double-clicks)
+    await db.bookmark.deleteMany({
       where: { id: input.id, userId: context.user.id },
     });
     return { success: true };
@@ -121,7 +123,7 @@ export const updateGroup = authed
 export const deleteGroup = authed
   .input(deleteByIdSchema)
   .handler(async ({ context, input }) => {
-    await db.group.delete({
+    await db.group.deleteMany({
       where: { id: input.id, userId: context.user.id },
     });
     return { success: true };
